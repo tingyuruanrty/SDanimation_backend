@@ -11,12 +11,14 @@ app = FastAPI(
 )
 
 # list of allowed origins for cors
-# frontend with these resources can access the backend
+# frontend with these origins can access the backend
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost",
     "http://localhost:8080",
+    "http://127.0.0.1:8000",
+    "http://localhost:5173/",
 ]
 
 app.add_middleware(
@@ -39,7 +41,8 @@ async def get_job_id(job_id: int):
   return {"job_id": job_id}
 
 # Main generation endpoint (POST request)
-@app.post("/generate")
+# need to parse the request body to get all the parameters for the sprite generation
+@app.post("/api/generate")
 async def create_sprite_job(prompt: str):
   # Data validation check
   if not prompt.strip():
