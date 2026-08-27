@@ -1,6 +1,15 @@
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+# class Item(BaseModel):
+#     prompt: str
+#     negativePrompt: str | None = None
+#     characterFile: bytes | None = None
+#     loraFile: bytes | None = None
+#     motionFile: bytes | None = None
 
 # Initialize the main application object
 # the parameters are used for automatically generating API documentation
