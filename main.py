@@ -4,12 +4,7 @@ from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# class Item(BaseModel):
-#     prompt: str
-#     negativePrompt: str | None = None
-#     characterFile: bytes | None = None
-#     loraFile: bytes | None = None
-#     motionFile: bytes | None = None
+# my backend should receive a request body from browser, send back a response body
 
 # Initialize the main application object
 # the parameters are used for automatically generating API documentation
@@ -51,6 +46,7 @@ async def get_job_id(job_id: int):
 
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
+# we are receiving a FormData object as the request body
 @app.post("/api/generate")
 async def create_sprite_job(prompt: str):
   # Data validation check
