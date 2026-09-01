@@ -55,6 +55,10 @@ async def create_sprite_job(
   character_image: Annotated[Optional[UploadFile], File()] = None,
   lora_file: Annotated[Optional[UploadFile], File()] = None,
   motion_video: Annotated[Optional[UploadFile], File()] = None):
+  
+  # call comfy cloud api to generate the sprite sheet
+  
+  
   # Data validation check
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
