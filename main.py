@@ -67,7 +67,7 @@ async def create_sprite_job(
   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
   job = await client.run(wf)
   # out put pictures form the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-  outputs = job.get_outputs("62")
+  outputs = job.get_outputs("9")
 
   
   # Data validation check
