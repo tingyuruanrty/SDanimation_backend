@@ -436,34 +436,5 @@
     "_meta": {
       "title": "Load Video (Upload) 🎥🅥🅗🅢"
     }
-  },
-  "61": {
-    "inputs": {
-      "columns": 7,
-      "cell_width": 256,
-      "cell_height": 438,
-      "padding": 4,
-      "images": [
-        "9",
-        0
-      ]
-    },
-    "class_type": "ImageGrid",
-    "_meta": {
-      "title": "Make Image Grid"
-    }
-  },
-  "62": {
-    "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": [
-        "61",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
-    }
   }
 }
