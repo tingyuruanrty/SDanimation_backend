@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Annotated
 
 # my backend should receive a request body from browser, send back a response body
 
@@ -48,7 +49,12 @@ async def get_job_id(job_id: int):
 # need to parse the request body to get all the parameters for the sprite generation
 # we are receiving a FormData object as the request body
 @app.post("/api/generate")
-async def create_sprite_job(prompt: str):
+async def create_sprite_job(
+  prompt: Annotated[str, Form()], 
+  negative_prompt: Annotated[Optional[str], Form()] = None,
+  character_image: Annotated[Optional[UploadFile], File()] = None,
+  lora_file: Annotated[Optional[UploadFile], File()] = None,
+  motion_video: Annotated[Optional[UploadFile], File()] = None):
   # Data validation check
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
