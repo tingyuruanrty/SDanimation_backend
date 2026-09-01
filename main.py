@@ -35,8 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# 1. Connect to comfy cloud api with api key
 client = Comfy(api_key="Comfyui-0ee5f666922fe5a361e43bc743d6c55d663ad0f38d68cf13b73b9ef89ce6d90a")
+
 
 # path operation decorator
 # when receive a http request of get operation on the root path, the function below will handel it
@@ -58,14 +59,16 @@ async def create_sprite_job(
   negative_prompt: Annotated[Optional[str], Form()] = None,
   character_image: Annotated[Optional[UploadFile], File()] = None,
   lora_file: Annotated[Optional[UploadFile], File()] = None,
-  motion_video: Annotated[Optional[UploadFile], File()] = None):
+  motion_video: Annotated[Optional[UploadFile], File()] = None
+  ):
   
   # call comfy cloud api to generate the sprite sheet
   # work on this tomorrow
-  workflow = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
-  job = client.run(workflow)
+  wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+  job = await client.run(wf)
+  # out put pictures form the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
   outputs = job.get_outputs("62")
-  # output_urls = [out.url for out in outputs]
+
   
   # Data validation check
   if not prompt.strip():
