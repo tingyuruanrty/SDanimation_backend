@@ -45,7 +45,10 @@ app.add_middleware(
 )
 
 # 1. Connect to comfy cloud api with api key
-client = Comfy(api_key="comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c")
+
+NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c".strip()
+
+client = Comfy(api_key=NEW_KEY)
 
 
 # path operation decorator
