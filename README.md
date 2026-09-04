@@ -11,6 +11,8 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
-need to alter node 3, 22, 57, 12, 60 based on the five parameter that's been took apart from the request body
+need to save the character reference picture and motion reference gif/video on the disk, i'm thinking achieve it use some data base
+need to alter node 3, 22, 57, 12, 60 based on the five parameter that's been took apart from the request body(paused)
 
-need to keep polish the work flow
+# current exist problem:
+comfy cloud api don't take lora as standard upload file(?)
