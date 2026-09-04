@@ -8,6 +8,7 @@ from comfy_sdk import Comfy
 from fastapi.staticfiles import StaticFiles
 import uuid
 from pathlib import Path
+import json
 # my backend should receive a request body from browser, send back a response body
 
 # Initialize the main application object
@@ -74,7 +75,32 @@ def create_sprite_job(
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
   
-  # alter the workflow json file based on the request parameters here, tomorrow's work
+  # with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
+  #   wf_data = json.load(f)
+    
+  # wf_data["3"]["inputs"]["text"] = prompt
+  
+  # if negative_prompt and negative_prompt.strip():
+  #   wf_data["22"]["inputs"]["text"] = negative_prompt
+
+  # if character_image:
+  
+
+  
+  # upload files are in parameters already, i should create a data base, add a row for each job, with all the parameters downloaded on the disk
+  # because the client.assets.from_file() expect a file path
+
+  
+  #   uploaded_image = client.assets.from_file("path/to/my_input.png")
+  #   wf_data["57"]["inputs"]["image"] = uploaded_image.name
+
+  # if lora_file:
+  #   wf_data["12"]["inputs"]["lora_name"] = upload_temp_asset(lora_file)
+
+  # if motion_video:
+  #   wf_data["60"]["inputs"]["video"] = upload_temp_asset(motion_video)
+  
+  # wf = client.workflows.from_dict(wf_data)
   
   
   # call comfy cloud api to generate the sprite sheet
