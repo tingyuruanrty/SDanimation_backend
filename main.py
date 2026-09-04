@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 import uuid
 from pathlib import Path
 import json
+import shutil
 # my backend should receive a request body from browser, send back a response body
 
 # Initialize the main application object
@@ -19,12 +20,35 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# static file
+# https://fastapi.tiangolo.com/tutorial/static-files/
 # add a image view in the path /outputs
 app.mount("/outputs", StaticFiles(directory="outputs"), name="present outputs")
 
 # Create the outputs directory if it does not exist
 output_dir = Path("outputs")
 output_dir.mkdir(exist_ok=True)
+input_dir = Path("inputs")
+input_dir.mkdir(exist_ok=True)
+
+def upload_asset(upload_file: UploadFile) -> str:
+    # 1. Extract file extension (e.g. ".png", ".gif")
+    extension = Path(upload_file.filename).suffix
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    save_path = input_dir / unique_filename
+
+    # 2. Write the incoming stream to disk
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(upload_file.file, buffer)
+
+    # 3. Push to Comfy Cloud assets
+    cloud_asset = client.assets.from_file(str(save_path))
+
+    # Optional: Delete from your disk immediately if you don't want to hoard user uploads
+    # save_path.unlink()
+
+    return cloud_asset.name
+
 
 # list of allowed origins for cors
 # frontend with these origins can access the backend
@@ -75,46 +99,37 @@ def create_sprite_job(
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
   
-  # with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
-  #   wf_data = json.load(f)
+  with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
+    wf_data = json.load(f)
     
-  # wf_data["3"]["inputs"]["text"] = prompt
+  wf_data["3"]["inputs"]["text"] = prompt
   
-  # if negative_prompt and negative_prompt.strip():
-  #   wf_data["22"]["inputs"]["text"] = negative_prompt
+  if negative_prompt and negative_prompt.strip():
+    wf_data["22"]["inputs"]["text"] = negative_prompt
 
-  # if character_image:
-  
+  if character_image:
+    wf_data["57"]["inputs"]["image"] = upload_asset(character_image)
 
-  
-  # upload files are in parameters already, i should create a data base, add a row for each job, with all the parameters downloaded on the disk
-  # because the client.assets.from_file() expect a file path
+  if lora_file:
+    wf_data["12"]["inputs"]["lora_name"] = lora_file.filename
 
-  
-  #   uploaded_image = client.assets.from_file("path/to/my_input.png")
-  #   wf_data["57"]["inputs"]["image"] = uploaded_image.name
-
-  # if lora_file:
-  #   wf_data["12"]["inputs"]["lora_name"] = upload_temp_asset(lora_file)
-
-  # if motion_video:
-  #   wf_data["60"]["inputs"]["video"] = upload_temp_asset(motion_video)
-  
-  # wf = client.workflows.from_dict(wf_data)
-  
+  if motion_video:
+    wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
   
   # call comfy cloud api to generate the sprite sheet
-  wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
-  job = client.run(wf)
+  wf = client.workflows.from_dict(wf_data)
+  # wf = await client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+  
+  job = await client.run(wf)
   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-  outputs = job.get_outputs("9")
+  outputs = await job.get_outputs("9")
   
   saved_files = []
   for output in outputs:
     # put uuid in the front so that there's never repeat name for file
     unique_filename = f"{uuid.uuid4()}_{output.name}"
     save_path = str( output_dir / unique_filename)
-    output.to_file(save_path)
+    await output.to_file(save_path)
     saved_files.append(f"http://127.0.0.1:8000/{save_path}")
 
   # Return a temporary structured response for testing
