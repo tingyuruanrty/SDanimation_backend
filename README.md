@@ -17,3 +17,5 @@ manage the asynchronize keyword to inplement concurrency
 
 # current exist problem:
 comfy cloud api don't take lora as standard upload file(?)
+i need a data base, to keep track of the trigger word for each lora
+i want a user system, keep track of generation history for each user
