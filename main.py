@@ -120,16 +120,16 @@ def create_sprite_job(
   wf = client.workflows.from_dict(wf_data)
   # wf = await client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
   
-  job = await client.run(wf)
+  job = client.run(wf)
   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-  outputs = await job.get_outputs("9")
+  outputs =  job.get_outputs("9")
   
   saved_files = []
   for output in outputs:
     # put uuid in the front so that there's never repeat name for file
     unique_filename = f"{uuid.uuid4()}_{output.name}"
     save_path = str( output_dir / unique_filename)
-    await output.to_file(save_path)
+    output.to_file(save_path)
     saved_files.append(f"http://127.0.0.1:8000/{save_path}")
 
   # Return a temporary structured response for testing
