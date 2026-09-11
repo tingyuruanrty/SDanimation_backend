@@ -11,9 +11,12 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
-data base
+data base(better use postgreSQL)
 need to alter node 3, 22, 57, 12, 60 based on the five parameter that's been took apart from the request body(paused)
 manage the asynchronize keyword to inplement concurrency
+docker(modern production environments)
+infrastructure(AWS/GCP)
+modern front end framework?
 
 # current exist problem:
 comfy cloud api don't take lora as standard upload file(?)

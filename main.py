@@ -70,7 +70,7 @@ app.add_middleware(
 )
 
 # 1. Connect to comfy cloud api with api key
-
+# man, i'm totally walking on the street without pants
 NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c".strip()
 
 client = Comfy(api_key=NEW_KEY)
@@ -82,6 +82,31 @@ client = Comfy(api_key=NEW_KEY)
 # path operation function, it will get called
 async def root():
   return {"status": "online", "message": "Server is up and running"}
+
+# 9/11/2026 work on this
+# a list of character objects should be included in the response body, the key should be characters
+# by convention, get don't alter resources at the backend
+@app.get("/api/characters")
+async def list_characters(db: Session = Depends(get_db)):
+# Query all characters from the table
+  characters = db.query(Character).all()
+
+  # Map the database objects into regular Python dictionaries
+  character_list = [
+      {
+          "id": char.id,
+          "name": char.name,
+          "trigger_word": char.trigger_word,
+          "lora_filename": char.lora_filename
+      }
+      for char in characters
+  ] 
+  
+  return {
+    "status": "good",
+    "characters": character_list,
+    "message": "Job successfully finished",
+  }
 
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
