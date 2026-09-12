@@ -34,22 +34,25 @@ input_dir = Path("inputs")
 input_dir.mkdir(exist_ok=True)
 
 def upload_asset(upload_file: UploadFile) -> str:
-    # 1. Extract file extension (e.g. ".png", ".gif")
-    extension = Path(upload_file.filename).suffix
-    unique_filename = f"{uuid.uuid4()}{extension}"
-    save_path = input_dir / unique_filename
+  # 1. Extract file extension (e.g. ".png", ".gif")
+  extension = Path(upload_file.filename).suffix
+  unique_filename = f"{uuid.uuid4()}{extension}"
+  save_path = input_dir / unique_filename
 
-    # 2. Write the incoming stream to disk
-    with open(save_path, "wb") as buffer:
-        shutil.copyfileobj(upload_file.file, buffer)
+  # 2. Write the incoming stream to disk
+  with open(save_path, "wb") as buffer:
+    shutil.copyfileobj(upload_file.file, buffer)
 
-    # 3. Push to Comfy Cloud assets
-    cloud_asset = client.assets.from_file(str(save_path))
+  # 3. Push to Comfy Cloud assets
+  cloud_asset = client.assets.from_file(str(save_path))
 
-    # Optional: Delete from your disk immediately if you don't want to hoard user uploads
-    # save_path.unlink()
-
-    return cloud_asset.name
+  # Optional: Delete from your disk immediately if you don't want to hoard user uploads
+  # save_path.unlink()
+  
+  ans = str(cloud_asset.id)
+  if ans.endswith(extension):
+    return ans
+  return f"{ans}{extension}"
 
 
 # list of allowed origins for cors
@@ -146,7 +149,7 @@ def create_sprite_job(
     wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
   
   # call comfy cloud api to generate the sprite sheet
-  wf = client.workflows.from_dict(wf_data)
+  wf = client.workflows.from_json(wf_data)
   # wf = await client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
   
   job = client.run(wf)
