@@ -1,5 +1,5 @@
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,6 +10,8 @@ import uuid
 from pathlib import Path
 import json
 import shutil
+from sqlalchemy.orm import Session
+from database import get_db, Character
 # my backend should receive a request body from browser, send back a response body
 
 # Initialize the main application object
@@ -111,12 +113,14 @@ async def list_characters(db: Session = Depends(get_db)):
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
 # we are receiving a FormData object as the request body
+
+# i need to change something here
 @app.post("/api/generate")
 def create_sprite_job(
   prompt: Annotated[str, Form()], 
   negative_prompt: Annotated[Optional[str], Form()] = None,
   character_image: Annotated[Optional[UploadFile], File()] = None,
-  lora_file: Annotated[Optional[UploadFile], File()] = None,
+  lora_filename: Annotated[Optional[str], Form()] = None,
   motion_video: Annotated[Optional[UploadFile], File()] = None
   ):
   
@@ -135,8 +139,8 @@ def create_sprite_job(
   if character_image:
     wf_data["57"]["inputs"]["image"] = upload_asset(character_image)
 
-  if lora_file:
-    wf_data["12"]["inputs"]["lora_name"] = lora_file.filename
+  if lora_filename:
+    wf_data["12"]["inputs"]["lora_name"] = lora_filename
 
   if motion_video:
     wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
