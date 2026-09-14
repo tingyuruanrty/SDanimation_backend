@@ -45,14 +45,8 @@ def upload_asset(upload_file: UploadFile) -> str:
 
   # 3. Push to Comfy Cloud assets
   cloud_asset = client.assets.from_file(str(save_path))
-
-  # Optional: Delete from your disk immediately if you don't want to hoard user uploads
-  # save_path.unlink()
   
-  ans = str(cloud_asset.id)
-  if ans.endswith(extension):
-    return ans
-  return f"{ans}{extension}"
+  return cloud_asset
 
 
 # list of allowed origins for cors
@@ -131,26 +125,36 @@ def create_sprite_job(
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
   
-  with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
-    wf_data = json.load(f)
+  # with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
+  #   wf_data = json.load(f)
     
-  wf_data["3"]["inputs"]["text"] = prompt
+  # print(prompt)
+  # wf_data["3"]["inputs"]["text"] = prompt
+  # print(wf_data["3"]["inputs"]["text"])
   
-  if negative_prompt and negative_prompt.strip():
-    wf_data["22"]["inputs"]["text"] = negative_prompt
+  # if negative_prompt and negative_prompt.strip():
+  #   wf_data["22"]["inputs"]["text"] = negative_prompt
 
-  if character_image:
-    wf_data["57"]["inputs"]["image"] = upload_asset(character_image)
+  # if character_image:
+  #   wf_data["57"]["inputs"]["image"] = upload_asset(character_image)
 
-  if lora_filename:
-    wf_data["12"]["inputs"]["lora_name"] = lora_filename
+  # if lora_filename:
+  #   wf_data["12"]["inputs"]["lora_name"] = lora_filename
 
-  if motion_video:
-    wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
+  # if motion_video:
+  #   wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
   
   # call comfy cloud api to generate the sprite sheet
-  wf = client.workflows.from_json(wf_data)
-  # wf = await client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+  # wf = client.workflows.from_json(wf_data)
+  
+  wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+  if character_image:
+    wf.set_input("57", "image", upload_asset(character_image))
+  wf.set_input("12", "lora_name", lora_filename)
+  wf.set_input("3", "text", prompt)
+  wf.set_input("22", "text", negative_prompt)
+  wf.set_input("60", "video", upload_asset(motion_video))
+
   
   job = client.run(wf)
   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.

@@ -18,6 +18,8 @@ docker(modern production environments)
 infrastructure(AWS/GCP)
 modern front end framework?
 
+i doubt wheather the syntax wf_data["60"]["inputs"]["video"] = upload_asset(motion_video) works
+
 # current exist problem:
 comfy cloud api don't take lora as standard upload file(?)
 i need a data base, to keep track of the trigger word for each lora
