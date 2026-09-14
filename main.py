@@ -150,7 +150,8 @@ def create_sprite_job(
   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
   if character_image:
     wf.set_input("57", "image", upload_asset(character_image))
-  wf.set_input("12", "lora_name", lora_filename)
+  if lora_filename:
+    wf.set_input("12", "lora_name", lora_filename)
   wf.set_input("3", "text", prompt)
   wf.set_input("22", "text", negative_prompt)
   wf.set_input("60", "video", upload_asset(motion_video))
