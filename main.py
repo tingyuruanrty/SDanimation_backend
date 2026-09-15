@@ -31,22 +31,6 @@ output_dir.mkdir(exist_ok=True)
 input_dir = Path("inputs")
 input_dir.mkdir(exist_ok=True)
 
-def upload_asset(upload_file: UploadFile) -> str:
-  # 1. Extract file extension (e.g. ".png", ".gif")
-  extension = Path(upload_file.filename).suffix
-  unique_filename = f"{uuid.uuid4()}{extension}"
-  save_path = input_dir / unique_filename
-
-  # 2. Write the incoming stream to disk
-  with open(save_path, "wb") as buffer:
-    shutil.copyfileobj(upload_file.file, buffer)
-
-  # 3. Push to Comfy Cloud assets
-  cloud_asset = client.assets.from_file(str(save_path))
-  
-  return cloud_asset
-
-
 # list of allowed origins for cors
 # frontend with these origins can access the backend
 origins = [
@@ -90,13 +74,13 @@ async def list_characters(db: Session = Depends(get_db)):
 
   # Map the database objects into regular Python dictionaries
   character_list = [
-      {
-          "id": char.id,
-          "name": char.name,
-          "trigger_word": char.trigger_word,
-          "lora_filename": char.lora_filename
-      }
-      for char in characters
+    {
+      "id": char.id,
+      "name": char.name,
+      "trigger_word": char.trigger_word,
+      "lora_filename": char.lora_filename
+    }
+    for char in characters
   ] 
   
   return {
@@ -105,11 +89,24 @@ async def list_characters(db: Session = Depends(get_db)):
     "message": "Job successfully finished",
   }
 
+def upload_asset(upload_file: UploadFile) -> str:
+  # 1. Extract file extension (e.g. ".png", ".gif")
+  extension = Path(upload_file.filename).suffix
+  unique_filename = f"{uuid.uuid4()}{extension}"
+  save_path = input_dir / unique_filename
+
+  # 2. Write the incoming stream to disk
+  with open(save_path, "wb") as buffer:
+    shutil.copyfileobj(upload_file.file, buffer)
+
+  # 3. Push to Comfy Cloud assets
+  cloud_asset = client.assets.from_file(str(save_path))
+  
+  return cloud_asset
+
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
 # we are receiving a FormData object as the request body
-
-# i need to change something here
 @app.post("/api/generate")
 def create_sprite_job(
   prompt: Annotated[str, Form()], 
@@ -118,53 +115,32 @@ def create_sprite_job(
   lora_filename: Annotated[Optional[str], Form()] = None,
   motion_video: Annotated[Optional[UploadFile], File()] = None
   ):
-  
-  # Data validation check
+
+  # prompt is empty
   if not prompt.strip():
     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
   
-  # with open("baseWorkflowChangeOnTopOfThis.json", "r", encoding="utf-8") as f:
-  #   wf_data = json.load(f)
-    
-  # print(prompt)
-  # wf_data["3"]["inputs"]["text"] = prompt
-  # print(wf_data["3"]["inputs"]["text"])
-  
-  # if negative_prompt and negative_prompt.strip():
-  #   wf_data["22"]["inputs"]["text"] = negative_prompt
-
-  # if character_image:
-  #   wf_data["57"]["inputs"]["image"] = upload_asset(character_image)
-
-  # if lora_filename:
-  #   wf_data["12"]["inputs"]["lora_name"] = lora_filename
-
-  # if motion_video:
-  #   wf_data["60"]["inputs"]["video"] = upload_asset(motion_video)
-  
-  # call comfy cloud api to generate the sprite sheet
-  # wf = client.workflows.from_json(wf_data)
-  
   # https://docs.comfy.org/development/api-development/sdks
   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+  wf.set_input("3", "text", prompt)
   if character_image:
     wf.set_input("57", "image", upload_asset(character_image))
   if lora_filename:
     wf.set_input("12", "lora_name", lora_filename)
-  wf.set_input("3", "text", prompt)
-  wf.set_input("22", "text", negative_prompt)
-  wf.set_input("60", "video", upload_asset(motion_video))
-
+  if negative_prompt:
+    wf.set_input("22", "text", negative_prompt)
+  if motion_video:
+    wf.set_input("60", "video", upload_asset(motion_video))
   
   job = client.run(wf)
   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-  outputs =  job.get_outputs("9")
+  outputs = job.get_outputs("9")
   
   saved_files = []
   for output in outputs:
     # put uuid in the front so that there's never repeat name for file
     unique_filename = f"{uuid.uuid4()}_{output.name}"
-    save_path = str( output_dir / unique_filename)
+    save_path = str(output_dir / unique_filename)
     output.to_file(save_path)
     saved_files.append(f"http://127.0.0.1:8000/{save_path}")
 
