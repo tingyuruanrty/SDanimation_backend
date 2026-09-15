@@ -12,7 +12,6 @@ import json
 import shutil
 from sqlalchemy.orm import Session
 from database import get_db, Character
-# my backend should receive a request body from browser, send back a response body
 
 # Initialize the main application object
 # the parameters are used for automatically generating API documentation
@@ -21,10 +20,9 @@ app = FastAPI(
     description="Backend script for handling sprite generation requests.",
     version="1.0.0",
 )
-
 # static file
 # https://fastapi.tiangolo.com/tutorial/static-files/
-# add a image view in the path /outputs
+# "Mounting" means adding a complete "independent" application in a specific path, that then takes care of handling all the sub-paths.
 app.mount("/outputs", StaticFiles(directory="outputs"), name="present outputs")
 
 # Create the outputs directory if it does not exist
@@ -147,6 +145,7 @@ def create_sprite_job(
   # call comfy cloud api to generate the sprite sheet
   # wf = client.workflows.from_json(wf_data)
   
+  # https://docs.comfy.org/development/api-development/sdks
   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
   if character_image:
     wf.set_input("57", "image", upload_asset(character_image))
