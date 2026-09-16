@@ -17,6 +17,7 @@ manage the asynchronize keyword to inplement concurrency
 docker(modern production environments)
 infrastructure(AWS/GCP)
 modern front end framework?
+user experience enhaunce, it could take more then five minutes for a generation work to finish, it would me nice if there's a anxious reliver
 
 i doubt wheather the syntax wf_data["60"]["inputs"]["video"] = upload_asset(motion_video) works
 

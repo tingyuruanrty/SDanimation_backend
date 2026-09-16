@@ -23,6 +23,7 @@ app = FastAPI(
 # static file
 # https://fastapi.tiangolo.com/tutorial/static-files/
 # "Mounting" means adding a complete "independent" application in a specific path, that then takes care of handling all the sub-paths.
+# this sub application will be mounted in /outputs directory
 app.mount("/outputs", StaticFiles(directory="outputs"), name="present outputs")
 
 # Create the outputs directory if it does not exist
@@ -56,7 +57,6 @@ NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2
 
 client = Comfy(api_key=NEW_KEY)
 
-
 # path operation decorator
 # when receive a http request of get operation on the root path, the function below will handel it
 @app.get("/")
@@ -64,9 +64,9 @@ client = Comfy(api_key=NEW_KEY)
 async def root():
   return {"status": "online", "message": "Server is up and running"}
 
-# 9/11/2026 work on this
 # a list of character objects should be included in the response body, the key should be characters
 # by convention, get don't alter resources at the backend
+# https://fastapi.tiangolo.com/tutorial/sql-databases/
 @app.get("/api/characters")
 async def list_characters(db: Session = Depends(get_db)):
 # Query all characters from the table
