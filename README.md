@@ -11,7 +11,6 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
-fix the download button
 data base(use sqllite now, better use postgreSQL)
 replace the character name achronym in the character select modal with character preview picture
 docker(modern production environments)
@@ -19,7 +18,6 @@ infrastructure(AWS/GCP)
 modern front end framework?
 user experience enhaunce, it could take more then five minutes for a generation work to finish, it would me nice if there's a anxious reliver
 should clean up the inputs directory and outputs directory every a few days
-result images are overflowing the result preview, need to fix that
 
 
 # current exist problem:
