@@ -18,6 +18,8 @@ docker(modern production environments)
 infrastructure(AWS/GCP)
 modern front end framework?
 user experience enhaunce, it could take more then five minutes for a generation work to finish, it would me nice if there's a anxious reliver
+should clean up the inputs directory and outputs directory every a few days
+result images are overflowing the result preview, need to fix that
 
 
 # current exist problem:
