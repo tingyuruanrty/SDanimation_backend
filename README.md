@@ -11,15 +11,14 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
-data base(better use postgreSQL)
-need to alter node 3, 22, 57, 12, 60 based on the five parameter that's been took apart from the request body(paused)
-manage the asynchronize keyword to inplement concurrency
+fix the download button
+data base(use sqllite now, better use postgreSQL)
+replace the character name achronym in the character select modal with character preview picture
 docker(modern production environments)
 infrastructure(AWS/GCP)
 modern front end framework?
 user experience enhaunce, it could take more then five minutes for a generation work to finish, it would me nice if there's a anxious reliver
 
-i doubt wheather the syntax wf_data["60"]["inputs"]["video"] = upload_asset(motion_video) works
 
 # current exist problem:
 comfy cloud api don't take lora as standard upload file(?)
