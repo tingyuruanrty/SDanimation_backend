@@ -7,14 +7,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Mapped, mapped_column
 # it gives engine three important fact: 1, what database , sqlite in this case; 2, database api, it could be omitted, default option will take in charge; 3, 
 
 # make engine
-SQLALCHEMY_DATABASE_URL = "sqlite:///./characters.db"
+SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:1728@localhost:5432/character_db"
 # establish connections to database
-engine = create_engine(
-    # URL string for the database
-    SQLALCHEMY_DATABASE_URL,
-    # SQLite requires this flag when used with multiple threads in FastAPI
-    connect_args={"check_same_thread": False}
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # i want to use the facade of sqlalchemy, which is session
 
