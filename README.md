@@ -11,6 +11,7 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
+my api key is exposed to public, it's like wearing no pants while walking on the street, i'm fond of it
 update API_BASE_URL after host the backend on the aws
 data base(use sqllite now, better use postgreSQL)
 replace the character name achronym in the character select modal with character preview picture
