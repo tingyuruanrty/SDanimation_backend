@@ -11,6 +11,7 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
+update API_BASE_URL after host the backend on the aws
 data base(use sqllite now, better use postgreSQL)
 replace the character name achronym in the character select modal with character preview picture
 docker(modern production environments)
