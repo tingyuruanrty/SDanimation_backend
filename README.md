@@ -11,6 +11,7 @@ source venv/Scripts/activate
 uvicorn main:app --reload
 
 # todo:
+the data base is on my laptop rightnow right now, even the container can't transplant that, i haven't figure out how to solve it yet
 my api key is exposed to public, it's like wearing no pants while walking on the street, i'm fond of it
 update API_BASE_URL after host the backend on the aws
 data base(use sqllite now, better use postgreSQL)
