@@ -7,7 +7,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Mapped, mapped_column
 # it gives engine three important fact: 1, what database , sqlite in this case; 2, database api, it could be omitted, default option will take in charge; 3, 
 
 # make engine
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:1728@localhost:5432/character_db"
+SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:employment@sdanimationcharacterlora-db.c32g4k4yckrp.us-east-2.rds.amazonaws.com:5432/postgres"
 # establish connections to database
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
