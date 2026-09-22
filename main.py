@@ -41,6 +41,7 @@ origins = [
     "http://localhost:8080",
     "http://127.0.0.1:8000",
     "http://localhost:5173",
+    "https://tingyuruanrty.github.io"
 ]
 
 app.add_middleware(
@@ -142,7 +143,7 @@ def create_sprite_job(
     unique_filename = f"{uuid.uuid4()}_{output.name}"
     save_path = str(output_dir / unique_filename)
     output.to_file(save_path)
-    saved_files.append(f"http://127.0.0.1:8000/{save_path}")
+    saved_files.append(f"http://sdanimation-alb-53343483.us-east-2.elb.amazonaws.com/{save_path}")
 
   # Return a temporary structured response for testing
   return {
