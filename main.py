@@ -143,7 +143,7 @@ def create_sprite_job(
     unique_filename = f"{uuid.uuid4()}_{output.name}"
     save_path = str(output_dir / unique_filename)
     output.to_file(save_path)
-    saved_files.append(f"http://sdanimation-alb-53343483.us-east-2.elb.amazonaws.com/{save_path}")
+    saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
 
   # Return a temporary structured response for testing
   return {
