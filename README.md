@@ -15,6 +15,9 @@ i can recall i upload the docker image to ECR, and define task in the ECS, make 
 
 # todo:
 progression, don't let the user waste my credit
+try to implement the asychronized job and polling 
+use s3 to store the output
+figure out how much do i need to pay jeff bezos
 my api key is exposed to public, it's like wearing no pants while walking on the street, i'm fond of it
 replace the character name achronym in the character select modal with character preview picture
 infrastructure(AWS/GCP)
