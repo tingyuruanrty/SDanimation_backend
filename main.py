@@ -12,6 +12,7 @@ import json
 import shutil
 from sqlalchemy.orm import Session
 from database import get_db, Character
+import os
 
 # Initialize the main application object
 # the parameters are used for automatically generating API documentation
@@ -54,7 +55,8 @@ app.add_middleware(
 
 # 1. Connect to comfy cloud api with api key
 # man, i'm totally walking on the street without pants
-NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c".strip()
+# NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c".strip()
+NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY").strip()
 
 client = Comfy(api_key=NEW_KEY)
 
