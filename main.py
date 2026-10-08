@@ -1,5 +1,5 @@
 import httpx
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -32,6 +32,8 @@ output_dir = Path("outputs")
 output_dir.mkdir(exist_ok=True)
 input_dir = Path("inputs")
 input_dir.mkdir(exist_ok=True)
+
+jobs = {}
 
 # list of allowed origins for cors
 # frontend with these origins can access the backend
@@ -110,46 +112,147 @@ def upload_asset(upload_file: UploadFile) -> str:
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
 # we are receiving a FormData object as the request body
+# @app.post("/api/generate")
+# def create_sprite_job(
+#   prompt: Annotated[str, Form()], 
+#   negative_prompt: Annotated[Optional[str], Form()] = None,
+#   character_image: Annotated[Optional[UploadFile], File()] = None,
+#   lora_filename: Annotated[Optional[str], Form()] = None,
+#   motion_video: Annotated[Optional[UploadFile], File()] = None
+#   ):
+
+#   # prompt is empty
+#   if not prompt.strip():
+#     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+  
+#   # https://docs.comfy.org/development/api-development/sdks
+#   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+#   wf.set_input("3", "text", prompt)
+#   if character_image:
+#     wf.set_input("57", "image", upload_asset(character_image))
+#   if lora_filename:
+#     wf.set_input("12", "lora_name", lora_filename)
+#   if negative_prompt:
+#     wf.set_input("22", "text", negative_prompt)
+#   if motion_video:
+#     wf.set_input("60", "video", upload_asset(motion_video))
+  
+#   job = client.run(wf)
+#   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
+#   outputs = job.get_outputs("9")
+  
+#   saved_files = []
+#   for output in outputs:
+#     # put uuid in the front so that there's never repeat name for file
+#     unique_filename = f"{uuid.uuid4()}_{output.name}"
+#     save_path = str(output_dir / unique_filename)
+#     output.to_file(save_path)
+#     saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
+
+#   # Return a temporary structured response for testing
+#   return {
+#       "status": "good",
+#       "image_urls": saved_files,
+#       "message": "Job successfully finished",
+#   }
+  
+# -------------------------------------------------------------------------
+# BACKGROUND WORKER: Runs the heavy Comfy cloud pipeline in the background
+# -------------------------------------------------------------------------
+def run_generation(
+    job_id: str,
+    prompt: str,
+    negative_prompt: Optional[str],
+    character_asset: Optional[str],
+    lora_filename: Optional[str],
+    motion_asset: Optional[str]
+):
+    try:
+        wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+        wf.set_input("3", "text", prompt)
+        if character_asset:
+            wf.set_input("57", "image", character_asset)
+        if lora_filename:
+            wf.set_input("12", "lora_name", lora_filename)
+        if negative_prompt:
+            wf.set_input("22", "text", negative_prompt)
+        if motion_asset:
+            wf.set_input("60", "video", motion_asset)
+
+        # Blocking generation happens here in the background thread
+        job = client.run(wf)
+        outputs = job.get_outputs("9")
+
+        saved_files = []
+        for output in outputs:
+            unique_filename = f"{uuid.uuid4()}_{output.name}"
+            save_path = str(output_dir / unique_filename)
+            output.to_file(save_path)
+            saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
+
+        # Update the job state to completed
+        jobs[job_id]["status"] = "completed"
+        jobs[job_id]["image_urls"] = saved_files
+
+    except Exception as e:
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = str(e)
+
+
+# -------------------------------------------------------------------------
+# ENDPOINT 1: Accepts form data, returns job_id in ~50ms
+# -------------------------------------------------------------------------
 @app.post("/api/generate")
 def create_sprite_job(
-  prompt: Annotated[str, Form()], 
-  negative_prompt: Annotated[Optional[str], Form()] = None,
-  character_image: Annotated[Optional[UploadFile], File()] = None,
-  lora_filename: Annotated[Optional[str], Form()] = None,
-  motion_video: Annotated[Optional[UploadFile], File()] = None
-  ):
+    background_tasks: BackgroundTasks,  # <-- Injected by FastAPI
+    prompt: Annotated[str, Form()], 
+    negative_prompt: Annotated[Optional[str], Form()] = None,
+    character_image: Annotated[Optional[UploadFile], File()] = None,
+    lora_filename: Annotated[Optional[str], Form()] = None,
+    motion_video: Annotated[Optional[UploadFile], File()] = None
+):
+    if not prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
-  # prompt is empty
-  if not prompt.strip():
-    raise HTTPException(status_code=400, detail="Prompt cannot be empty")
-  
-  # https://docs.comfy.org/development/api-development/sdks
-  wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
-  wf.set_input("3", "text", prompt)
-  if character_image:
-    wf.set_input("57", "image", upload_asset(character_image))
-  if lora_filename:
-    wf.set_input("12", "lora_name", lora_filename)
-  if negative_prompt:
-    wf.set_input("22", "text", negative_prompt)
-  if motion_video:
-    wf.set_input("60", "video", upload_asset(motion_video))
-  
-  job = client.run(wf)
-  # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-  outputs = job.get_outputs("9")
-  
-  saved_files = []
-  for output in outputs:
-    # put uuid in the front so that there's never repeat name for file
-    unique_filename = f"{uuid.uuid4()}_{output.name}"
-    save_path = str(output_dir / unique_filename)
-    output.to_file(save_path)
-    saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
+    job_id = str(uuid.uuid4())
 
-  # Return a temporary structured response for testing
-  return {
-      "status": "good",
-      "image_urls": saved_files,
-      "message": "Job successfully finished",
-  }
+    # Upload files to Comfy Cloud assets before returning the response
+    character_asset = upload_asset(character_image) if character_image else None
+    motion_asset = upload_asset(motion_video) if motion_video else None
+
+    # Register initial job status
+    jobs[job_id] = {
+        "status": "processing",
+        "image_urls": [],
+        "error": None
+    }
+
+    # Queue the heavy generation to run in the background
+    background_tasks.add_task(
+        run_generation,
+        job_id=job_id,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        character_asset=character_asset,
+        lora_filename=lora_filename,
+        motion_asset=motion_asset
+    )
+
+    # Return immediately to the client
+    return {
+        "status": "queued",
+        "job_id": job_id,
+        "message": "Job received and processing in background"
+    }
+
+
+# -------------------------------------------------------------------------
+# ENDPOINT 2: Polling endpoint (frontend checks this every 2 seconds)
+# -------------------------------------------------------------------------
+@app.get("/api/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    job = jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return job
