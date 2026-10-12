@@ -56,8 +56,6 @@ app.add_middleware(
 )
 
 # 1. Connect to comfy cloud api with api key
-# man, i'm totally walking on the street without pants
-# NEW_KEY = "comfyui-a12b3c56ce23d2195663501692976c09c88de645b3ef9885250698bc379c2f5c".strip()
 NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY").strip()
 
 client = Comfy(api_key=NEW_KEY)
@@ -109,6 +107,7 @@ def upload_asset(upload_file: UploadFile) -> str:
   
   return cloud_asset
 
+# old non-polling/blocking version of the endpoint, it's the endpoint that currently used in the container on the cloud, i will replace it once local testing is done;
 # Main generation endpoint (POST request)
 # need to parse the request body to get all the parameters for the sprite generation
 # we are receiving a FormData object as the request body
@@ -156,9 +155,7 @@ def upload_asset(upload_file: UploadFile) -> str:
 #       "message": "Job successfully finished",
 #   }
   
-# -------------------------------------------------------------------------
-# BACKGROUND WORKER: Runs the heavy Comfy cloud pipeline in the background
-# -------------------------------------------------------------------------
+
 def run_generation(
     job_id: str,
     prompt: str,
@@ -199,12 +196,10 @@ def run_generation(
         jobs[job_id]["error"] = str(e)
 
 
-# -------------------------------------------------------------------------
-# ENDPOINT 1: Accepts form data, returns job_id in ~50ms
-# -------------------------------------------------------------------------
+# asynchronous version of the endpoint, haven't started testing it yet
 @app.post("/api/generate")
 def create_sprite_job(
-    background_tasks: BackgroundTasks,  # <-- Injected by FastAPI
+    background_tasks: BackgroundTasks,
     prompt: Annotated[str, Form()], 
     negative_prompt: Annotated[Optional[str], Form()] = None,
     character_image: Annotated[Optional[UploadFile], File()] = None,
@@ -246,9 +241,7 @@ def create_sprite_job(
     }
 
 
-# -------------------------------------------------------------------------
-# ENDPOINT 2: Polling endpoint (frontend checks this every 2 seconds)
-# -------------------------------------------------------------------------
+# polling endpoint, the front end can call this endpoint to check the status of the job
 @app.get("/api/jobs/{job_id}")
 async def get_job_status(job_id: str):
     job = jobs.get(job_id)
