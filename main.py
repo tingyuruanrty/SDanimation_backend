@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi import Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Any
 from comfy_sdk import Comfy
 from fastapi.staticfiles import StaticFiles
 import uuid
@@ -14,29 +14,22 @@ from sqlalchemy.orm import Session
 from database import get_db, Character
 import os
 
-# Initialize the main application object
-# the parameters are used for automatically generating API documentation
 app = FastAPI(
     title="Sprite Sheet Generator on comfycloud",
     description="Backend script for handling sprite generation requests.",
     version="1.0.0",
 )
-# static file
-# https://fastapi.tiangolo.com/tutorial/static-files/
-# "Mounting" means adding a complete "independent" application in a specific path, that then takes care of handling all the sub-paths.
-# this sub application will be mounted in /outputs directory
-app.mount("/outputs", StaticFiles(directory="outputs"), name="present outputs")
 
-# Create the outputs directory if it does not exist
+# Ensure directories exist BEFORE mounting StaticFiles
 output_dir = Path("outputs")
 output_dir.mkdir(exist_ok=True)
 input_dir = Path("inputs")
 input_dir.mkdir(exist_ok=True)
 
+app.mount("/outputs", StaticFiles(directory="outputs"), name="present outputs")
+
 jobs = {}
 
-# list of allowed origins for cors
-# frontend with these origins can access the backend
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
@@ -55,152 +48,108 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. Connect to comfy cloud api with api key
-NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY").strip()
-
+NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY", "").strip()
 client = Comfy(api_key=NEW_KEY)
 
-# path operation decorator
-# when receive a http request of get operation on the root path, the function below will handel it
-@app.get("/")
-# path operation function, it will get called
-async def root():
-  return {"status": "online", "message": "Server is up and running"}
 
-# a list of character objects should be included in the response body, the key should be characters
-# by convention, get don't alter resources at the backend
-# https://fastapi.tiangolo.com/tutorial/sql-databases/
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "Server is up and running"}
+
+
 @app.get("/api/characters")
 async def list_characters(db: Session = Depends(get_db)):
-# Query all characters from the table
-  characters = db.query(Character).all()
-
-  # Map the database objects into regular Python dictionaries
-  character_list = [
-    {
-      "id": char.id,
-      "name": char.name,
-      "trigger_word": char.trigger_word,
-      "lora_filename": char.lora_filename
+    characters = db.query(Character).all()
+    character_list = [
+        {
+            "id": char.id,
+            "name": char.name,
+            "trigger_word": char.trigger_word,
+            "lora_filename": char.lora_filename
+        }
+        for char in characters
+    ]
+    return {
+        "status": "good",
+        "characters": character_list,
+        "message": "Job successfully finished",
     }
-    for char in characters
-  ] 
-  
-  return {
-    "status": "good",
-    "characters": character_list,
-    "message": "Job successfully finished",
-  }
 
-def upload_asset(upload_file: UploadFile) -> str:
-  # 1. Extract file extension (e.g. ".png", ".gif")
-  extension = Path(upload_file.filename).suffix
-  unique_filename = f"{uuid.uuid4()}{extension}"
-  save_path = input_dir / unique_filename
 
-  # 2. Write the incoming stream to disk
-  with open(save_path, "wb") as buffer:
-    shutil.copyfileobj(upload_file.file, buffer)
+def upload_asset(upload_file: UploadFile) -> Any:
+    # 1. Extract file extension (e.g. ".png", ".gif")
+    extension = Path(upload_file.filename).suffix
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    save_path = input_dir / unique_filename
 
-  # 3. Push to Comfy Cloud assets
-  cloud_asset = client.assets.from_file(str(save_path))
-  
-  return cloud_asset
+    # 2. Write the incoming stream to disk
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(upload_file.file, buffer)
 
-# old non-polling/blocking version of the endpoint, it's the endpoint that currently used in the container on the cloud, i will replace it once local testing is done;
-# Main generation endpoint (POST request)
-# need to parse the request body to get all the parameters for the sprite generation
-# we are receiving a FormData object as the request body
-# @app.post("/api/generate")
-# def create_sprite_job(
-#   prompt: Annotated[str, Form()], 
-#   negative_prompt: Annotated[Optional[str], Form()] = None,
-#   character_image: Annotated[Optional[UploadFile], File()] = None,
-#   lora_filename: Annotated[Optional[str], Form()] = None,
-#   motion_video: Annotated[Optional[UploadFile], File()] = None
-#   ):
+    # 3. Push to Comfy Cloud assets (returns an Asset handle used by wf.set_input)
+    cloud_asset = client.assets.from_file(str(save_path))
+    return cloud_asset
 
-#   # prompt is empty
-#   if not prompt.strip():
-#     raise HTTPException(status_code=400, detail="Prompt cannot be empty")
-  
-#   # https://docs.comfy.org/development/api-development/sdks
-#   wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
-#   wf.set_input("3", "text", prompt)
-#   if character_image:
-#     wf.set_input("57", "image", upload_asset(character_image))
-#   if lora_filename:
-#     wf.set_input("12", "lora_name", lora_filename)
-#   if negative_prompt:
-#     wf.set_input("22", "text", negative_prompt)
-#   if motion_video:
-#     wf.set_input("60", "video", upload_asset(motion_video))
-  
-#   job = client.run(wf)
-#   # out put pictures from the comfy cloud is in outputs now, i will need to save it on the disk, and send back the url to front end.
-#   outputs = job.get_outputs("9")
-  
-#   saved_files = []
-#   for output in outputs:
-#     # put uuid in the front so that there's never repeat name for file
-#     unique_filename = f"{uuid.uuid4()}_{output.name}"
-#     save_path = str(output_dir / unique_filename)
-#     output.to_file(save_path)
-#     saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
-
-#   # Return a temporary structured response for testing
-#   return {
-#       "status": "good",
-#       "image_urls": saved_files,
-#       "message": "Job successfully finished",
-#   }
-  
 
 def run_generation(
     job_id: str,
     prompt: str,
     negative_prompt: Optional[str],
-    character_asset: Optional[str],
+    character_asset: Optional[Any],
     lora_filename: Optional[str],
-    motion_asset: Optional[str]
+    motion_asset: Optional[Any]
 ):
     try:
-        wf = client.workflows.from_file("baseWorkflowChangeOnTopOfThis.json")
+        # Load the new AnimateDiff workflow JSON
+        wf = client.workflows.from_file("animatediffusion.json")
+        
+        # Node 3: Positive prompt
         wf.set_input("3", "text", prompt)
+        
+        # Node 57: Character reference image (LoadImage)
         if character_asset:
             wf.set_input("57", "image", character_asset)
+            
+        # Node 12: LoRA Loader
         if lora_filename:
             wf.set_input("12", "lora_name", lora_filename)
+            
+        # Node 22: Negative prompt
         if negative_prompt:
             wf.set_input("22", "text", negative_prompt)
+            
+        # Node 96: Motion GIF reference (LoadImage node in animatediffusion.json)
         if motion_asset:
-            wf.set_input("60", "video", motion_asset)
+            wf.set_input("96", "image", motion_asset)
 
         # Blocking generation happens here in the background thread
         job = client.run(wf)
+        
+        # Node 9: SaveImage (individual frames)
         outputs = job.get_outputs("9")
 
         saved_files = []
         for output in outputs:
             unique_filename = f"{uuid.uuid4()}_{output.name}"
-            save_path = str(output_dir / unique_filename)
-            output.to_file(save_path)
-            saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path}")
+            save_path = output_dir / unique_filename
+            output.to_file(str(save_path))
+            # .as_posix() ensures forward slashes (outputs/...) on both Windows and Linux
+            saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path.as_posix()}")
 
         # Update the job state to completed
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["image_urls"] = saved_files
 
     except Exception as e:
+        print(f"Job {job_id} failed with error: {e}")
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
 
 
-# asynchronous version of the endpoint, haven't started testing it yet
 @app.post("/api/generate")
 def create_sprite_job(
     background_tasks: BackgroundTasks,
-    prompt: Annotated[str, Form()], 
+    prompt: Annotated[str, Form()],
     negative_prompt: Annotated[Optional[str], Form()] = None,
     character_image: Annotated[Optional[UploadFile], File()] = None,
     lora_filename: Annotated[Optional[str], Form()] = None,
@@ -241,7 +190,6 @@ def create_sprite_job(
     }
 
 
-# polling endpoint, the front end can call this endpoint to check the status of the job
 @app.get("/api/jobs/{job_id}")
 async def get_job_status(job_id: str):
     job = jobs.get(job_id)
