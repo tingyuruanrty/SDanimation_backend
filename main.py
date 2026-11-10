@@ -44,7 +44,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,8 +55,6 @@ load_dotenv(override=True)
 
 # Strip whitespace AND any accidental quotes around the key
 NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY", "").strip().strip('"').strip("'")
-print(f"Loaded key starting with: {NEW_KEY[:10]}... (length: {len(NEW_KEY)})")
-
 client = Comfy(api_key=NEW_KEY)
 
 # FIX: Force get_job to use the job ID instead of the full urls.self URL
@@ -148,7 +146,7 @@ def run_generation(
             save_path = output_dir / unique_filename
             output.to_file(str(save_path))
             # .as_posix() ensures forward slashes (outputs/...) on both Windows and Linux
-            saved_files.append(f"http://localhost:8000/{save_path.as_posix()}")
+            saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path.as_posix()}")
 
         # Update the job state to completed
         jobs[job_id]["status"] = "completed"

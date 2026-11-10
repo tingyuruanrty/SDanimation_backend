@@ -6,5 +6,6 @@ RUN mkdir -p inputs outputs
 COPY main.py .
 COPY database.py .
 COPY baseWorkflowChangeOnTopOfThis.json .
+COPY animatediffusion.json .
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
