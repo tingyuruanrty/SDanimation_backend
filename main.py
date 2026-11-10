@@ -13,6 +13,7 @@ import shutil
 from sqlalchemy.orm import Session
 from database import get_db, Character
 import os
+from dotenv import load_dotenv
 
 app = FastAPI(
     title="Sprite Sheet Generator on comfycloud",
@@ -37,20 +38,33 @@ origins = [
     "http://localhost:8080",
     "http://127.0.0.1:8000",
     "http://localhost:5173",
-    "https://tingyuruanrty.github.io"
+    "https://tingyuruanrty.github.io",
+    "http://127.0.0.1:5500/index.html"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY", "").strip()
+# Load .env file directly in Python (handles Windows CRLF properly)
+load_dotenv(override=True)
+
+# Strip whitespace AND any accidental quotes around the key
+NEW_KEY = os.getenv("COMFY_CLOUD_API_KEY", "").strip().strip('"').strip("'")
+print(f"Loaded key starting with: {NEW_KEY[:10]}... (length: {len(NEW_KEY)})")
+
 client = Comfy(api_key=NEW_KEY)
 
+# FIX: Force get_job to use the job ID instead of the full urls.self URL
+# so comfy_low never strips the Authorization: Bearer header when polling!
+_orig_get_job = client._low.get_job
+client._low.get_job = lambda job_or_url, *a, **kw: _orig_get_job(
+    job_or_url.rstrip("/").split("/")[-1], *a, **kw
+)
 
 @app.get("/")
 async def root():
@@ -134,13 +148,15 @@ def run_generation(
             save_path = output_dir / unique_filename
             output.to_file(str(save_path))
             # .as_posix() ensures forward slashes (outputs/...) on both Windows and Linux
-            saved_files.append(f"https://dwybuisa1bwwg.cloudfront.net/{save_path.as_posix()}")
+            saved_files.append(f"http://localhost:8000/{save_path.as_posix()}")
 
         # Update the job state to completed
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["image_urls"] = saved_files
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Job {job_id} failed with error: {e}")
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
